@@ -59,8 +59,38 @@ helm install finenomore .
 ```
 
 
+---
+~~~bash
+yc iam key create \
+  --service-account-id ajenudqiv3rbtcnqf3bh \
+  --folder-id b1g0muq63s1j2m4h5oab \
+  --output ~/.yc_keys/key.json
+~~~
 
 
+~~~bash
+yc resource-manager folder add-access-binding b1g0muq63s1j2m4h5oab \
+  --role admin \
+  --subject serviceAccount:ajenudqiv3rbtcnqf3bh 
+~~~
+
+  cloud_id  = "b1g85rkpqt0ukuce35r3"
+  folder_id = "b1g0muq63s1j2m4h5oab"
+
+> https://cloud.yandex.ru/docs/tutorials/infrastructure-management/terraform-quickstart#configure-provider
 
 
+yc config set service-account-key ~/.yc_keys/key.json
+yc config set cloud-id "b1g85rkpqt0ukuce35r3"
+yc config set folder-id "b1g0muq63s1j2m4h5oab" 
 
+
+~~~bash
+yc compute instance start yc-toolbox
+yc managed-kubernetes cluster start k8s-master
+~~~
+
+~~~bash
+yc compute instance stop yc-toolbox
+yc managed-kubernetes cluster stop k8s-master
+~~~
