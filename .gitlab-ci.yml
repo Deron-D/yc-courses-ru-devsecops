@@ -1,6 +1,10 @@
+stages:
+  - build
+  - deploy
+
 variables:
   IMAGE_NAME: "${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}"
-  GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent" 
+  GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent"
 
 kaniko-build:
   image:
