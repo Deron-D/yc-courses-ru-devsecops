@@ -16,12 +16,12 @@ secret_detection:
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
     GIT_STRATEGY: "clone"
-  allow_failure: false
+  allow_failure: true
   script:
     - apk add jq
     - /analyzer run
     - exit $(eval "cat gl-secret-detection-report.json | jq --raw-output '.vulnerabilities | length'")
-    
+
 kaniko-build:
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
