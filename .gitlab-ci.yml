@@ -1,4 +1,4 @@
-# include:
+include:
 #   - template: Security/Secret-Detection.gitlab-ci.yml
 #   - template: Security/SAST.gitlab-ci.yml
 #   - template: Security/Container-Scanning.gitlab-ci.yml 
@@ -87,7 +87,9 @@ dast-prepare:
 
 dast-scan:
   stage: test
-  needs: ["dast-prepare"]
+  needs: 
+    - job: dast-prepare
+      artifacts: true
   script:
     - echo "OWASP ZAP will be here $APP_ADDRESS
 
