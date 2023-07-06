@@ -118,3 +118,7 @@ address: 51.250.87.33
 ~~~bash
 kubectl create namespace finenomore
 ~~~
+
+~~~bash
+kubectl create secret docker-registry gitlab-credentials --docker-server=stumpd.gitlab.yandexcloud.net:5050 --docker-username="gitlab+deploy-token-1" --docker-password="PASSWORD" --docker-email=dmitriypnev@gmail.com -n finenomore 
+~~~
