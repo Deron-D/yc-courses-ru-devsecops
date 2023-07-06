@@ -91,7 +91,7 @@ dast-scan:
     - job: dast-prepare
       artifacts: true
   script:
-    - echo "OWASP ZAP will be here $APP_ADDRESS
+    - echo "OWASP ZAP will be here $APP_ADDRESS"
 
 dast-destroy:
   extends: .deploy
