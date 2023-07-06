@@ -1,6 +1,6 @@
 imagePullPolicy: IfNotPresent
 gitlabUrl: "https://stumpd.gitlab.yandexcloud.net/"
-runnerRegistrationToken: "<REGISTRATION TOKEN>"
+#runnerRegistrationToken: "<REGISTRATION TOKEN>"
 terminationGracePeriodSeconds: 3600
 concurrent: 10
 checkInterval: 30

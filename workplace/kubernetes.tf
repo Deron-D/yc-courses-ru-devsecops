@@ -42,7 +42,7 @@ resource "yandex_kubernetes_node_group" "k8s_node_group" {
 
     boot_disk {
       type = "network-ssd"
-      size = 64
+      size = 32
     }
 
     scheduling_policy {
@@ -82,7 +82,7 @@ resource "yandex_iam_service_account" "k8s-sa" {
 
 resource "yandex_resourcemanager_folder_iam_binding" "editor" {
   # Сервисному аккаунту назначается роль "editor".
-  folder_id = "b1g0muq63s1j2m4h5oab"
+  folder_id = "b1g8hoqkqlg8pq0dg85k"
   role      = "editor"
   members = [
     "serviceAccount:${yandex_iam_service_account.k8s-sa.id}"
@@ -91,7 +91,7 @@ resource "yandex_resourcemanager_folder_iam_binding" "editor" {
 
 resource "yandex_resourcemanager_folder_iam_binding" "images-puller" {
   # Сервисному аккаунту назначается роль "container-registry.images.puller".
-  folder_id = "b1g0muq63s1j2m4h5oab"
+  folder_id = "b1g8hoqkqlg8pq0dg85k"
   role      = "container-registry.images.puller"
   members = [
     "serviceAccount:${yandex_iam_service_account.k8s-sa.id}"

@@ -94,3 +94,27 @@ yc managed-kubernetes cluster start k8s-master
 yc compute instance stop yc-toolbox
 yc managed-kubernetes cluster stop k8s-master
 ~~~
+
+~~~bash
+yc load-balancer network-load-balancer list 
+~~~
+~~~console
++----------------------+----------------------------------------------+-------------+----------+----------------+------------------------+--------+
+|          ID          |                     NAME                     |  REGION ID  |   TYPE   | LISTENER COUNT | ATTACHED TARGET GROUPS | STATUS |
++----------------------+----------------------------------------------+-------------+----------+----------------+------------------------+--------+
+| enp441clrius9r60pjth | k8s-4e99be9d1a75bbe6a01c8bb67b1e5031153f8b76 | ru-central1 | EXTERNAL |              2 | enpkpddldcg79vqrfbam   | ACTIVE |
++----------------------+----------------------------------------------+-------------+----------+----------------+------------------------+--------+
+~~~
+
+~~~bash
+yc load-balancer network-load-balancer get enp441clrius9r60pjth | grep address 
+~~~
+
+~~~console
+address: 51.250.87.33
+address: 51.250.87.33
+~~~
+
+~~~bash
+kubectl create namespace finenomore
+~~~
