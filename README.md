@@ -67,9 +67,19 @@ cd k8s/finenomore
 helm install finenomore .
 ```
 
-
-
-
-
+---
+```
+kubectl create secret docker-registry gitlab-credentials --docker-server=dpnev.gitlab.yandexcloud.net:5050 --docker-username=dmitriypnev --docker-password=glpat-_qxMEjwoZaXUUKPBhxS- --docker-email=dmitriypnev@gmail.com -n finenomore
+```
+```
+helm repo add gitlab https://charts.gitlab.io
+helm repo update
+helm upgrade --install finenomore-gitlab-agent gitlab/gitlab-agent \
+    --namespace gitlab-agent-finenomore-gitlab-agent \
+    --create-namespace \
+    --set image.tag=v16.6.0 \
+    --set config.token=glagent-Mfqm8PUQD_KXNYoxDfLD3LXtHsGj9s6s8RFoumBFgz3H5fDcpg \
+    --set config.kasAddress=wss://dpnev.gitlab.yandexcloud.net/-/kubernetes-agent/
+```
 
 

@@ -1,5 +1,6 @@
 variables:
   IMAGE_NAME: "${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}"
+  GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent" 
 
 kaniko-build:
   image:
@@ -15,3 +16,11 @@ kaniko-build:
     - if: $CI_COMMIT_BRANCH
       exists:
         - Dockerfile
+
+deploy_app:
+  image: dtzar/helm-kubectl:3.9
+  stage: deploy
+  script:
+    - kubectl config use-context $GITLAB_AGENT
+    - cd k8s/finenomore
+    - helm upgrade --install finenomore . --set finenomore.image=${IMAGE_NAME} --set finenomore.imagePullSecrets=gitlab-credentials --atomic
