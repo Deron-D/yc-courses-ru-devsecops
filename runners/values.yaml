@@ -19,4 +19,4 @@ runners:
       [runners.kubernetes]
         namespace = "{{.Release.Namespace}}"
         image = "ubuntu:20.04"
-        privileged = true 
+        privileged = false
