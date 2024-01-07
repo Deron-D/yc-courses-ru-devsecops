@@ -23,11 +23,17 @@ secret_detection:
     - cat gl-secret-detection-report.json | jq
     - exit $(eval "cat gl-secret-detection-report.json | jq --raw-output '.vulnerabilities | length'")
     
-sast:
+kubesec-sast:
   stage: pre-build
   variables:
     SCAN_KUBERNETES_MANIFESTS: "true"
     KUBESEC_HELM_CHARTS_PATH: "./k8s/finenomore"
+  allow_failure: true
+  script:
+    - apk add jq
+    - /analyzer run
+    - cat kubesec-sast.json | jq
+
 
 kaniko-build:
   image:
