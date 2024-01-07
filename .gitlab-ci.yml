@@ -32,8 +32,7 @@ sast:
   script:
     - apk add jq
     - /analyzer run
-    - cat kubesec-sast.json | jq
-
+    - cat gl-sast-report.json | jq
 
 kaniko-build:
   image:
