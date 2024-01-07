@@ -78,7 +78,7 @@ helm upgrade --install finenomore-gitlab-agent gitlab/gitlab-agent \
     --namespace gitlab-agent-finenomore-gitlab-agent \
     --create-namespace \
     --set image.tag=v16.6.0 \
-    --set config.token=glagent-Mfqm8PUQD_KXNYoxDfLD3LXtHsGj9s6s8RFoumBFgz3H5fDcpg \
+    --set config.token=... \
     --set config.kasAddress=wss://dpnev.gitlab.yandexcloud.net/-/kubernetes-agent/
 ```
 
