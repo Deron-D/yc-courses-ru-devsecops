@@ -32,13 +32,15 @@ sast:
 
 kubesec-sast:
   script:
+    - cat $SAST_ANALYZER_IMAGE
     - /analyzer run
-    - cat gl-secret-detection-report.json | jq
+    - cat gl-sast-report.json
 
 semgrep-sast:
   script:
+    - cat $SAST_ANALYZER_IMAGE
     - /analyzer run
-    - cat gl-secret-detection-report.json | jq
+    - cat gl-sast-report.json
 
 kaniko-build:
   image:
