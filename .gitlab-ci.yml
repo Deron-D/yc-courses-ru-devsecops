@@ -30,6 +30,16 @@ sast:
     KUBESEC_HELM_CHARTS_PATH: "./k8s/finenomore"
   allow_failure: true
 
+kubesec-sast:
+  script:
+    - /analyzer run
+    - cat gl-secret-detection-report.json | jq
+
+semgrep-sast:
+  script:
+    - /analyzer run
+    - cat gl-secret-detection-report.json | jq
+
 kaniko-build:
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
