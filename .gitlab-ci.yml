@@ -23,7 +23,7 @@ secret_detection:
     - cat gl-secret-detection-report.json | jq
     - exit $(eval "cat gl-secret-detection-report.json | jq --raw-output '.vulnerabilities | length'")
     
-kubesec-sast:
+sast:
   stage: pre-build
   variables:
     SCAN_KUBERNETES_MANIFESTS: "true"
