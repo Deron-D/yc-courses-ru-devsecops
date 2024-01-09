@@ -71,6 +71,12 @@ helm install finenomore .
 ```
 kubectl create secret docker-registry gitlab-credentials --docker-server=dpnev.gitlab.yandexcloud.net:5050 --docker-username=dmitriypnev --docker-password=glpat-_qxMEjwoZaXUUKPBhxS- --docker-email=dmitriypnev@gmail.com -n finenomore
 ```
+
+```
+kubectl create secret docker-registry gitlab-credentials --docker-server=dpnev.gitlab.yandexcloud.net:5050 --docker-username=dmitriypnev --docker-password=glpat-_qxMEjwoZaXUUKPBhxS- --docker-email=dmitriypnev@gmail.com -n finenomore-dast
+```
+
+
 ```
 helm repo add gitlab https://charts.gitlab.io
 helm repo update

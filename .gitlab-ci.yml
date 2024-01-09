@@ -7,11 +7,13 @@ stages:
   - pre-build
   - build
   - post-build
-#  - deploy 
+  - test
+  # - deploy 
 
 variables:
   IMAGE_NAME: "${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}"
   GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent" 
+  DAST_NAME: finenomore-dast 
 
 secret_detection:
   stage: pre-build
@@ -60,7 +62,41 @@ kaniko-build:
 
 container_scanning:
   stage: post-build
-  
+
+.deploy:
+  image: dtzar/helm-kubectl:3.9
+  before_script:
+    - kubectl config use-context $GITLAB_AGENT
+
+dast-prepare:
+  extends: .deploy
+  stage: test
+  script:
+    - LB_ADDRESS=$(kubectl get services ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    - APP_HOST=finenomore-dast.$LB_ADDRESS.sslip.io
+    - helm upgrade --install $DAST_NAME ./k8s/finenomore
+      --set namespace=$DAST_NAME
+      --set finenomore.image=$IMAGE_NAME
+      --set finenomore.imagePullSecrets=gitlab-credentials --atomic
+      --set finenomore.ingress.host=$APP_HOST
+    - echo "APP_ADDRESS is $APP_HOST"
+    - echo "APP_ADDRESS=$APP_HOST" >> app.env
+  artifacts:
+    reports:
+      dotenv: app.env 
+    
+dast-scan:
+  stage: test
+  needs: ["dast-prepare"]
+  script:
+    - echo "OWASP ZAP will be here $APP_ADDRESS"
+
+dast-destroy:
+  extends: .deploy
+  stage: test
+  needs: ["dast-scan"]
+  script:
+    - helm uninstall $DAST_NAME 
 # deploy_app:
 #   image: dtzar/helm-kubectl:3.9
 #   stage: deploy
