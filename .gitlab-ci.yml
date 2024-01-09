@@ -105,10 +105,15 @@ dast-destroy:
   needs: ["dast-scan"]
   script:
     - helm uninstall $DAST_NAME 
-# deploy_app:
-#   image: dtzar/helm-kubectl:3.9
-#   stage: deploy
-#   script:
-#     - kubectl config use-context $GITLAB_AGENT
-#     - cd k8s/finenomore
-#     - helm upgrade --install finenomore . --set finenomore.image=${IMAGE_NAME} --set finenomore.imagePullSecrets=gitlab-credentials --atomic
+
+deploy_app:
+  extends: .deploy
+  image: dtzar/helm-kubectl:3.9
+  stage: deploy
+  needs: ["semgrep-sast", "kubesec-sast", "container_scanning", "secret_detection", "trivy-sca", "dast-scan"]
+  script:
+    - cd k8s/finenomore
+    - helm upgrade --install finenomore .
+      --set finenomore.image=${IMAGE_NAME}
+      --set finenomore.imagePullSecrets=gitlab-credentials
+      --atomic 
