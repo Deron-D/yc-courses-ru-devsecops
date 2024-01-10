@@ -4,6 +4,7 @@ include:
   - template: Security/Container-Scanning.gitlab-ci.yml 
 
 stages:
+  - report-prepare
   - pre-build
   - build
   - post-build
@@ -13,7 +14,94 @@ stages:
 variables:
   IMAGE_NAME: "${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}"
   GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent" 
-  DAST_NAME: finenomore-dast 
+  DAST_NAME: finenomore-dast
+  # DefectDojo
+  ###
+  # Global DefectDojo scan variables
+  # Available values : Info, Low, Medium, High, Critical
+  DEFECTDOJO_SCAN_MINIMUM_SEVERITY: "Info"
+  DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS: "true"
+  DEFECTDOJO_SCAN_ENVIRONMENT: "Default" 
+
+.deploy:
+  image: dtzar/helm-kubectl:3.9
+  before_script:
+    - kubectl config use-context $GITLAB_AGENT
+
+.defectdojo_publish:
+  stage: report
+  image: alpine
+  allow_failure: true
+  before_script:
+    - apk add curl coreutils
+    - TODAY=`date +%Y-%m-%d`
+  script:
+    - |
+        curl --insecure --fail --location --request POST "${DEFECTDOJO_URL}/import-scan/" \
+            --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
+            --form "scan_date=\"${TODAY}\"" \
+            --form "minimum_severity=\"${DEFECTDOJO_SCAN_MINIMUM_SEVERITY}\"" \
+            --form "scan_type=\"${DEFECTDOJO_SCAN_TYPE}\"" \
+            --form "engagement=\"${DEFECTDOJO_ENGAGEMENTID}\"" \
+            --form "file=@${DEFECTDOJO_SCAN_FILE}" \
+            --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
+            --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
+
+defectdojo_create_engagement:
+  stage: report-prepare
+  image:
+    name: alpine
+  variables:
+    GIT_STRATEGY: none
+    DEFECTDOJO_ENGAGEMENT_PERIOD: 7
+    DEFECTDOJO_ENGAGEMENT_STATUS: "Not Started"
+    DEFECTDOJO_ENGAGEMENT_BUILD_SERVER: "null"
+    DEFECTDOJO_ENGAGEMENT_SOURCE_CODE_MANAGEMENT_SERVER: "null"
+    DEFECTDOJO_ENGAGEMENT_ORCHESTRATION_ENGINE: "null"
+    DEFECTDOJO_ENGAGEMENT_DEDUPLICATION_ON_ENGAGEMENT: "false"
+    DEFECTDOJO_ENGAGEMENT_THREAT_MODEL: "true"
+    DEFECTDOJO_ENGAGEMENT_API_TEST: "true"
+    DEFECTDOJO_ENGAGEMENT_PEN_TEST: "true"
+    DEFECTDOJO_ENGAGEMENT_CHECK_LIST: "true"
+  before_script:
+    - apk add curl jq coreutils
+    - TODAY=`date +%Y-%m-%d`
+    - ENDDAY=$(date -d "+${DEFECTDOJO_ENGAGEMENT_PERIOD} days" +%Y-%m-%d)
+  script:
+    - |
+        ENGAGEMENTID=`curl --insecure --fail --location --request POST "${DEFECTDOJO_URL}/engagements/" \
+              --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
+              --header 'Content-Type: application/json' \
+                --data-raw "{
+                  \"tags\": [\"GITLAB-CI\"],
+                  \"name\": \"${CI_COMMIT_REF_NAME}#${CI_PIPELINE_ID}\",
+                  \"description\": \"${CI_COMMIT_DESCRIPTION}\",
+                  \"version\": \"${CI_COMMIT_REF_NAME}\",
+                  \"first_contacted\": \"${TODAY}\",
+                  \"target_start\": \"${TODAY}\",
+                  \"target_end\": \"${ENDDAY}\",
+                  \"reason\": \"string\",
+                  \"tracker\": \"${CI_PROJECT_URL}/-/issues\",
+                  \"threat_model\": \"${DEFECTDOJO_ENGAGEMENT_THREAT_MODEL}\",
+                  \"api_test\": \"${DEFECTDOJO_ENGAGEMENT_API_TEST}\",
+                  \"pen_test\": \"${DEFECTDOJO_ENGAGEMENT_PEN_TEST}\",
+                  \"check_list\": \"${DEFECTDOJO_ENGAGEMENT_CHECK_LIST}\",
+                  \"status\": \"${DEFECTDOJO_ENGAGEMENT_STATUS}\",
+                  \"engagement_type\": \"CI/CD\",
+                  \"build_id\": \"${CI_PIPELINE_ID}\",
+                  \"commit_hash\": \"${CI_COMMIT_SHORT_SHA}\",
+                  \"branch_tag\": \"${CI_COMMIT_REF_NAME}\",
+                  \"deduplication_on_engagement\": \"${DEFECTDOJO_ENGAGEMENT_DEDUPLICATION_ON_ENGAGEMENT}\",
+                  \"product\": \"${DEFECTDOJO_PRODUCTID}\",
+                  \"source_code_management_uri\": \"${CI_PROJECT_URL}\",
+                  \"build_server\": ${DEFECTDOJO_ENGAGEMENT_BUILD_SERVER},
+                  \"source_code_management_server\": ${DEFECTDOJO_ENGAGEMENT_SOURCE_CODE_MANAGEMENT_SERVER},
+                  \"orchestration_engine\": ${DEFECTDOJO_ENGAGEMENT_ORCHESTRATION_ENGINE}
+                }" | jq -r '.id'`
+    - echo "DEFECTDOJO_ENGAGEMENTID=${ENGAGEMENTID}" >> defectdojo.env
+  artifacts:
+    reports:
+      dotenv: defectdojo.env
 
 secret_detection:
   stage: pre-build
@@ -63,10 +151,6 @@ kaniko-build:
 container_scanning:
   stage: post-build
 
-.deploy:
-  image: dtzar/helm-kubectl:3.9
-  before_script:
-    - kubectl config use-context $GITLAB_AGENT
 
 dast-prepare:
   extends: .deploy
@@ -116,4 +200,5 @@ deploy_app:
     - helm upgrade --install finenomore .
       --set finenomore.image=${IMAGE_NAME}
       --set finenomore.imagePullSecrets=gitlab-credentials
-      --atomic 
+      --atomic
+
