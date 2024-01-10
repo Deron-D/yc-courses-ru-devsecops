@@ -9,6 +9,7 @@ stages:
   - build
   - post-build
   - test
+  - report
   - deploy 
 
 variables:
