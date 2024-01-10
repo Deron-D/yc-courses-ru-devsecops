@@ -114,13 +114,43 @@ secret_detection:
     - /analyzer run
     - cat gl-secret-detection-report.json | jq
     - exit $(eval "cat gl-secret-detection-report.json | jq --raw-output '.vulnerabilities | length'")
-    
+  artifacts:
+    when: always
+    paths:
+      - gl-secret-detection-report.json 
+
+dd_secret_detection:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "secret_detection"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: gl-secret-detection-report.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab Secret Detection Report" 
+              
 sast:
   stage: pre-build
   variables:
     SCAN_KUBERNETES_MANIFESTS: "true"
     KUBESEC_HELM_CHARTS_PATH: "./k8s/finenomore"
   allow_failure: true
+  artifacts:
+    paths:
+      - ${CI_JOB_NAME}.json
+  after_script:
+    - mv gl-sast-report.json ${CI_JOB_NAME}.json 
+
+dd_semgrep_sast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "semgrep-sast"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: semgrep-sast.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report" 
+
+dd_kubesec_sast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "kubesec-sast"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: kubesec-sast.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report"         
 
 trivy-sca:
   stage: pre-build
@@ -132,6 +162,13 @@ trivy-sca:
   artifacts:
     paths:
       - trivy-sca.json 
+
+dd_trivy:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "trivy-sca"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: trivy-sca.json
+    DEFECTDOJO_SCAN_TYPE: "Trivy Scan" 
 
 kaniko-build:
   image:
@@ -151,6 +188,12 @@ kaniko-build:
 container_scanning:
   stage: post-build
 
+dd_container_scanning:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "container_scanning"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: gl-container-scanning-report.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab Container Scan" 
 
 dast-prepare:
   extends: .deploy
@@ -182,6 +225,27 @@ dast-scan:
     when: always
     paths:
       - zap.json 
+
+dast-scan:
+  stage: test
+  needs: ["dast-prepare"]
+  image:
+    name: owasp/zap2docker-stable:2.12.0
+  script:
+    - mkdir -p /zap/wrk
+    - zap-full-scan.py -t "http://${APP_ADDRESS}" -I -x zap.xml
+    - cp /zap/wrk/zap.xml .
+  artifacts:
+    when: always
+    paths:
+      - zap.xml 
+
+dd_dast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "dast-scan"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: zap.xml
+    DEFECTDOJO_SCAN_TYPE: "ZAP Scan" 
 
 dast-destroy:
   extends: .deploy
