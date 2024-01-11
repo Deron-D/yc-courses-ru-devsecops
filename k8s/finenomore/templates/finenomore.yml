@@ -26,6 +26,9 @@ spec:
         - name: {{ .Values.finenomore.name }}
           image: {{ .Values.finenomore.image }}
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: {{ .Values.postgres.secret }}
           ports:
             - containerPort: {{ .Values.finenomore.ports.internal }}
 ---

@@ -20,10 +20,10 @@ def create_app():
   bootstrap = Bootstrap5(app)
 
   def get_cursor():
-    conn = psycopg2.connect(host="postgres",
-      database="finenomore",
-      user="finenomore",
-      password="LTAIsupersecretkeyfordat")
+    conn = psycopg2.connect(host=os.getenv("POSTGRES_HOST", "postgres"),
+      database=os.getenv("POSTGRES_DB"),
+      user=os.getenv("POSTGRES_USER"),
+      password=os.getenv("POSTGRES_PASSWORD"))
     
     conn.set_session(autocommit=True)
 

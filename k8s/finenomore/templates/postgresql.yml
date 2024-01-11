@@ -18,9 +18,6 @@ metadata:
   name: {{ .Values.postgres.name }}
   namespace: {{ default .Release.Namespace .Values.namespace | quote }}
 data:
-  POSTGRES_PASSWORD: LTAIsupersecretkeyfordat
-  POSTGRES_USER: finenomore
-  POSTGRES_DB: finenomore
   POSTGRES_HOST_AUTH_METHOD: md5
   PGDATA: /var/lib/postgresql/data/finenomore/
 ---
@@ -95,6 +92,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Values.postgres.name }}
+            - secretRef:
+                name: {{ .Values.postgres.secret }}
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgredb

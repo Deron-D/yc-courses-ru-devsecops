@@ -88,4 +88,12 @@ helm upgrade --install finenomore-gitlab-agent gitlab/gitlab-agent \
     --set config.kasAddress=wss://dpnev.gitlab.yandexcloud.net/-/kubernetes-agent/
 ```
 
-
+Удаление секретов
+~~~
+cd ~/yc-courses-ru-devsecops-gitlab/
+git checkout main
+git filter-branch -f --tree-filter "sed -i.bak -e's/LTAIsupersecretkeyfordat/fakepassword/g' app/finenomore/__init__.py; rm -f app/finenomore/__init__.py.bak" HEAD
+git filter-branch -f --tree-filter "sed -i.bak -e's/LTAIsupersecretkeyfordat/fakepassword/g' k8s/finenomore/templates/postgresql.yml; rm -f k8s/finenomore/templates/postgresql.yml.bak" HEAD
+git gc --prune=now
+git push --force
+~~~
