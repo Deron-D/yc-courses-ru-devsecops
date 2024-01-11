@@ -9,9 +9,9 @@ postgres:
     app: postgres
   secret: finenomore-db
   resources:
-  requests:
-    cpu: 25m
-    memory: 64M
+    requests:
+      cpu: 25m
+      memory: 64M
 
 finenomore:
   imagePullSecrets: []
