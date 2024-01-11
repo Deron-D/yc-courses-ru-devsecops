@@ -99,6 +99,7 @@ spec:
               name: postgredb
             - mountPath: /docker-entrypoint-initdb.d
               name: postgreinit
+          resources: {{ .Values.postgres.resources | toYaml | nindent 12 }}               
       volumes:
         - name: postgredb
           persistentVolumeClaim:
@@ -106,6 +107,7 @@ spec:
         - name: postgreinit
           configMap:
             name: {{ .Values.postgres.name }}-init
+      
 ---
 apiVersion: v1
 kind: Service
