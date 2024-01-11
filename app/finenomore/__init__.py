@@ -41,7 +41,8 @@ def create_app():
       number = content['number']
       cur = get_cursor()
       try:
-        cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER('{number}'));")
+        # cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER('{number}'));")
+        cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER(%s));", (number,))
         rows = cur.fetchall()
       except:
         return jsonify({ "result": "Database error" }), 500
@@ -55,7 +56,8 @@ def create_app():
     if number:
       cur = get_cursor()
       try:
-        cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER('{number}'));")
+        # cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER('{number}'));")
+        cur.execute(f"SELECT * FROM fines WHERE number_id IN (SELECT id FROM numbers WHERE LOWER(number) = LOWER(%s));", (number,))
         rows = cur.fetchall()
       except:
         pass
