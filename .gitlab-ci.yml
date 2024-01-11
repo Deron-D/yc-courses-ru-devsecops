@@ -37,17 +37,17 @@ variables:
     - apk add curl coreutils
     - TODAY=`date +%Y-%m-%d`
   script:
-    - |
-        curl --insecure --fail --location --request POST "${DEFECTDOJO_URL}/import-scan/" \
-            --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
-            --form "scan_date=\"${TODAY}\"" \
-            --form "minimum_severity=\"${DEFECTDOJO_SCAN_MINIMUM_SEVERITY}\"" \
-            --form "scan_type=\"${DEFECTDOJO_SCAN_TYPE}\"" \
-            --form "engagement=\"${DEFECTDOJO_ENGAGEMENTID}\"" \
-            --form "file=@${DEFECTDOJO_SCAN_FILE}" \
-            --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
-            --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
-            
+    - >
+      curl -v --insecure --fail --location --request POST "${DEFECTDOJO_URL}/import-scan/" \
+          --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
+          --form "scan_date=\"${TODAY}\"" \
+          --form "minimum_severity=\"${DEFECTDOJO_SCAN_MINIMUM_SEVERITY}\"" \
+          --form "scan_type=\"${DEFECTDOJO_SCAN_TYPE}\"" \
+          --form "engagement=\"${DEFECTDOJO_ENGAGEMENTID}\"" \
+          --form "file=@${DEFECTDOJO_SCAN_FILE}" \
+          --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
+          --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
+
 defectdojo_create_engagement:
   stage: report-prepare
   image:
