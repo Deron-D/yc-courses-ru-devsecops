@@ -47,7 +47,7 @@ variables:
             --form "file=@${DEFECTDOJO_SCAN_FILE}" \
             --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
             --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
-
+            
 defectdojo_create_engagement:
   stage: report-prepare
   image:
@@ -113,7 +113,6 @@ secret_detection:
   script:
     - apk add jq
     - /analyzer run
-    - cat gl-secret-detection-report.json | jq
     - exit $(eval "cat gl-secret-detection-report.json | jq --raw-output '.vulnerabilities | length'")
   artifacts:
     when: always
