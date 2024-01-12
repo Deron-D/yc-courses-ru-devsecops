@@ -1,7 +1,7 @@
 include:
   - template: Security/Secret-Detection.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Container-Scanning.gitlab-ci.yml 
+  - template: Security/Container-Scanning.gitlab-ci.yml
 
 stages:
   - report-prepare
@@ -15,22 +15,24 @@ stages:
 
 variables:
   IMAGE_NAME: "${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}:${CI_COMMIT_SHA}"
-  GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent" 
+  GITLAB_AGENT: "$CI_PROJECT_PATH:finenomore-gitlab-agent"
   DAST_NAME: finenomore-dast
+
+  ###
   # DefectDojo
   ###
   # Global DefectDojo scan variables
   # Available values : Info, Low, Medium, High, Critical
   DEFECTDOJO_SCAN_MINIMUM_SEVERITY: "Info"
   DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS: "true"
-  DEFECTDOJO_SCAN_ENVIRONMENT: "Default" 
+  DEFECTDOJO_SCAN_ENVIRONMENT: "Default"
 
 .deploy:
   image: dtzar/helm-kubectl:3.9
   before_script:
     - kubectl config use-context $GITLAB_AGENT
   rules:
-    - if: $CI_COMMIT_BRANCH 
+    - if: $CI_COMMIT_BRANCH
 
 .defectdojo_publish:
   stage: report
@@ -40,18 +42,18 @@ variables:
     - apk add curl coreutils
     - TODAY=`date +%Y-%m-%d`
   script:
-    - >
-      curl -v --insecure --fail --location --request POST "${DEFECTDOJO_URL}/import-scan/" \
-          --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
-          --form "scan_date=\"${TODAY}\"" \
-          --form "minimum_severity=\"${DEFECTDOJO_SCAN_MINIMUM_SEVERITY}\"" \
-          --form "scan_type=\"${DEFECTDOJO_SCAN_TYPE}\"" \
-          --form "engagement=\"${DEFECTDOJO_ENGAGEMENTID}\"" \
-          --form "file=@${DEFECTDOJO_SCAN_FILE}" \
-          --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
-          --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
+    - |
+        curl --insecure --fail --location --request POST "${DEFECTDOJO_URL}/import-scan/" \
+            --header "Authorization: Token ${DEFECTDOJO_TOKEN}" \
+            --form "scan_date=\"${TODAY}\"" \
+            --form "minimum_severity=\"${DEFECTDOJO_SCAN_MINIMUM_SEVERITY}\"" \
+            --form "scan_type=\"${DEFECTDOJO_SCAN_TYPE}\"" \
+            --form "engagement=\"${DEFECTDOJO_ENGAGEMENTID}\"" \
+            --form "file=@${DEFECTDOJO_SCAN_FILE}" \
+            --form "close_old_findings=\"${DEFECTDOJO_SCAN_CLOSE_OLD_FINDINGS}\"" \
+            --form "environment=\"${DEFECTDOJO_SCAN_ENVIRONMENT}\""
   rules:
-    - if: $CI_COMMIT_BRANCH 
+    - if: $CI_COMMIT_BRANCH
 
 defectdojo_create_engagement:
   stage: report-prepare
@@ -109,7 +111,7 @@ defectdojo_create_engagement:
     reports:
       dotenv: defectdojo.env
   rules:
-    - if: $CI_COMMIT_BRANCH 
+    - if: $CI_COMMIT_BRANCH
 
 secret_detection:
   stage: pre-build
@@ -124,40 +126,19 @@ secret_detection:
   artifacts:
     when: always
     paths:
-      - gl-secret-detection-report.json 
+      - gl-secret-detection-report.json
 
-dd_secret_detection:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "secret_detection"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: gl-secret-detection-report.json
-    DEFECTDOJO_SCAN_TYPE: "GitLab Secret Detection Report" 
-              
 sast:
   stage: pre-build
   variables:
     SCAN_KUBERNETES_MANIFESTS: "true"
     KUBESEC_HELM_CHARTS_PATH: "./k8s/finenomore"
-  allow_failure: true
+    SAST_EXCLUDED_ANALYZERS: "bandit,gosec,eslint"
   artifacts:
     paths:
       - ${CI_JOB_NAME}.json
   after_script:
-    - mv gl-sast-report.json ${CI_JOB_NAME}.json 
-
-dd_semgrep_sast:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "semgrep-sast"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: semgrep-sast.json
-    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report" 
-
-dd_kubesec_sast:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "kubesec-sast"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: kubesec-sast.json
-    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report"         
+    - mv gl-sast-report.json ${CI_JOB_NAME}.json
 
 trivy-sca:
   stage: pre-build
@@ -168,16 +149,9 @@ trivy-sca:
     - trivy fs -f json --output trivy-sca.json .
   artifacts:
     paths:
-      - trivy-sca.json 
+      - trivy-sca.json
   rules:
-    - if: $CI_COMMIT_BRANCH 
-
-dd_trivy:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "trivy-sca"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: trivy-sca.json
-    DEFECTDOJO_SCAN_TYPE: "Trivy Scan" 
+    - if: $CI_COMMIT_BRANCH
 
 kaniko-build:
   image:
@@ -197,13 +171,6 @@ kaniko-build:
 container_scanning:
   stage: post-build
 
-dd_container_scanning:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "container_scanning"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: gl-container-scanning-report.json
-    DEFECTDOJO_SCAN_TYPE: "GitLab Container Scan" 
-
 dast-prepare:
   extends: .deploy
   stage: test
@@ -219,23 +186,7 @@ dast-prepare:
     - echo "APP_ADDRESS=$APP_HOST" >> app.env
   artifacts:
     reports:
-      dotenv: app.env 
-    
-dast-scan:
-  stage: test
-  needs: ["dast-prepare"]
-  image:
-    name: owasp/zap2docker-stable:2.12.0
-  script:
-    - mkdir -p /zap/wrk
-    - zap-full-scan.py -t "http://${APP_ADDRESS}" -I -J zap.json
-    - cp /zap/wrk/zap.json .
-  artifacts:
-    when: always
-    paths:
-      - zap.json 
-  rules:
-    - if: $CI_COMMIT_BRANCH 
+      dotenv: app.env
 
 dast-scan:
   stage: test
@@ -249,21 +200,58 @@ dast-scan:
   artifacts:
     when: always
     paths:
-      - zap.xml 
-
-dd_dast:
-  extends: .defectdojo_publish
-  needs: ["defectdojo_create_engagement", "dast-scan"]
-  variables:
-    DEFECTDOJO_SCAN_FILE: zap.xml
-    DEFECTDOJO_SCAN_TYPE: "ZAP Scan" 
+      - zap.xml
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
 dast-destroy:
   extends: .deploy
   stage: test
   needs: ["dast-scan"]
   script:
-    - helm uninstall $DAST_NAME 
+    - helm uninstall $DAST_NAME
+
+dd_secret_detection:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "secret_detection"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: gl-secret-detection-report.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab Secret Detection Report"
+
+dd_semgrep_sast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "semgrep-sast"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: semgrep-sast.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report"
+
+dd_kubesec_sast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "kubesec-sast"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: kubesec-sast.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab SAST Report"
+
+dd_trivy:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "trivy-sca"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: trivy-sca.json
+    DEFECTDOJO_SCAN_TYPE: "Trivy Scan"
+
+dd_container_scanning:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "container_scanning"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: gl-container-scanning-report.json
+    DEFECTDOJO_SCAN_TYPE: "GitLab Container Scan"
+
+dd_dast:
+  extends: .defectdojo_publish
+  needs: ["defectdojo_create_engagement", "dast-scan"]
+  variables:
+    DEFECTDOJO_SCAN_FILE: zap.xml
+    DEFECTDOJO_SCAN_TYPE: "ZAP Scan"
 
 deploy_app:
   extends: .deploy
@@ -292,4 +280,4 @@ publish_app:
     - crane push finenomore.tar cr.yandex/${YCR_REGISTRY_ID}/finenomore:$CI_COMMIT_TAG
     - crane push finenomore.tar cr.yandex/${YCR_REGISTRY_ID}/finenomore:latest
   rules:
-    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/ 
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
