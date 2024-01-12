@@ -25,7 +25,8 @@
           <div class="col-lg-3 mx-auto">
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
               <div class="input-group mb-3">
-                <input id="number" style="text-transform: uppercase" maxlength="9" type="text" class="form-control" placeholder="А000АА77" value="{{ number }}">
+                <input id="number" style="text-transform: uppercase" maxlength="9" type="text" class="form-control" placeholder="А000АА77" value="{{ number | safe }}">
+                <!-- <input id="number" type="text" class="form-control" placeholder="А000АА77" value="{{ number }}"> -->
                 <span class="input-group-text">RUS</span>
                 <button class="btn btn-outline-secondary" type="button" id="submit">Проверить</button>
               </div>
